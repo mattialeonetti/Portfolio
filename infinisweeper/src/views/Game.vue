@@ -75,10 +75,11 @@ const numberImages = {
 
 const cellId = (row, col) => `${row}-${col}`
 
-const createCell = (row, col) => ({
+const createCell = (row, col, boardId) => ({
 	id: cellId(row, col),
 	row,
 	col,
+	boardId,
 	mine: false,
 	revealed: false,
 	flagged: false,
@@ -89,7 +90,7 @@ const createBoard = () => {
 	const boardId = String(nextBoardId.value)
 	nextBoardId.value += 1
 	boards.value[boardId] = Array.from({ length: rows }, (_, row) =>
-		Array.from({ length: cols }, (_, col) => createCell(row, col)),
+		Array.from({ length: cols }, (_, col) => createCell(row, col, boardId)),
 	)
 	placeMines(boardId)
 	computeNeighborMines(boardId)
@@ -98,29 +99,45 @@ const createBoard = () => {
 
 const neighbors = (boardId, row, col) => {
 	const result = []
+	const currentBoard = boards.value[boardId]
+	const numericBoardId = Number(boardId)
+	const leftBoard = boards.value[String(numericBoardId - 1)]
+	const rightBoard = boards.value[String(numericBoardId + 1)]
 
 	for (let rowOffset = -1; rowOffset <= 1; rowOffset += 1) {
+		const nextRow = row + rowOffset
+		if (nextRow < 0 || nextRow >= rows) {
+			continue
+		}
+
 		for (let colOffset = -1; colOffset <= 1; colOffset += 1) {
 			if (rowOffset === 0 && colOffset === 0) {
 				continue
 			}
 
-			const nextRow = row + rowOffset
 			const nextCol = col + colOffset
 
 			if (nextRow >= 0 && nextRow < rows && nextCol >= 0 && nextCol < cols) {
-				result.push(boards.value[boardId][nextRow][nextCol])
+				result.push(currentBoard[nextRow][nextCol])
 			}
+		}
+
+		if (col === 0 && leftBoard) {
+			result.push(leftBoard[nextRow][cols - 1])
+		}
+
+		if (col === cols - 1 && rightBoard) {
+			result.push(rightBoard[nextRow][0])
 		}
 	}
 
 	return result
 }
 
-const placeMines = (boardId) => {
+const placeMines = (boardId, mines = mineCount) => {
 	let placed = 0
 
-	while (placed < mineCount) {
+	while (placed < mines) {
 		const row = Math.floor(Math.random() * rows)
 		const col = Math.floor(Math.random() * cols)
 		const cell = boards.value[boardId][row][col]
@@ -147,6 +164,13 @@ const computeNeighborMines = (boardId) => {
 	}
 }
 
+const recomputeAllBoardNumbers = () => {
+	for (const boardId of Object.keys(boards.value)) {
+		computeNeighborMines(boardId)
+	}
+
+}
+
 const revealAllMines = (boardId) => {
 	for (let row = 0; row < rows; row += 1) {
 		for (let col = 0; col < cols; col += 1) {
@@ -159,13 +183,13 @@ const revealAllMines = (boardId) => {
 }
 
 const floodReveal = (boardId, startRow, startCol) => {
-	const stack = [[startRow, startCol]]
+	const stack = [[boardId, startRow, startCol]]
 
 	while (stack.length > 0) {
-		const [row, col] = stack.pop()
-		const cell = boards.value[boardId][row][col]
+		const [neighborBoardId, row, col] = stack.pop()
+		const cell = boards.value[neighborBoardId][row][col]
 
-		if (cell.revealed || cell.flagged) {
+		if ((cell.revealed || cell.flagged) && cell.col !== cols - 1) {
 			continue
 		}
 
@@ -175,25 +199,21 @@ const floodReveal = (boardId, startRow, startCol) => {
 			continue
 		}
 
-		for (const neighbor of neighbors(boardId, row, col)) {
+		for (const neighbor of neighbors(neighborBoardId, row, col)) {
 			if (!neighbor.revealed && !neighbor.mine) {
-				stack.push([neighbor.row, neighbor.col])
+				stack.push([neighbor.boardId, neighbor.row, neighbor.col])
 			}
 		}
 	}
 }
 
-const hasWon = (boardId) => {
+const floodRevealBorderCells = (boardId) => {
 	for (let row = 0; row < rows; row += 1) {
-		for (let col = 0; col < cols; col += 1) {
-			const cell = boards.value[boardId][row][col]
-			if (!cell.mine && !cell.revealed) {
-				return false
-			}
+		const cell = boards.value[boardId][row][cols - 1]
+		if (!cell.mine && cell.revealed && cell.neighborMines === 0) {
+			floodReveal(boardId, row, cols - 1)
 		}
 	}
-
-	return true
 }
 
 const reveal = (boardId, row, col) => {
@@ -235,10 +255,34 @@ const toggleFlag = (boardId, row, col) => {
 }
 
 const addBoard = () => {
-	createBoard()
+	const newBoardId = createBoard()
+	recomputeAllBoardNumbers()
+	if (newBoardId > 0) {
+		floodRevealBorderCells(newBoardId - 1)
+	}
 	gameOver.value = false
 	won.value = false
 	explodedCellId.value = null
+}
+
+const addEmptyBoard = () => {
+	const boardId = String(nextBoardId.value)
+	nextBoardId.value += 1
+	boards.value[boardId] = Array.from({ length: rows }, (_, row) =>
+		Array.from({ length: cols }, (_, col) => createCell(row, col, boardId)),
+	)
+	boards.value[boardId].forEach((row) => row.forEach((cell) => (cell.revealed = true)))
+}
+
+const addLightBoard = () => {
+	const boardId = String(nextBoardId.value)
+	nextBoardId.value += 1
+	boards.value[boardId] = Array.from({ length: rows }, (_, row) =>
+		Array.from({ length: cols }, (_, col) => createCell(row, col, boardId)),
+	)
+	placeMines(boardId, mineCount / 4)
+	computeNeighborMines(boardId)
+	floodRevealBorderCells(boardId - 1)
 }
 
 const cellImage = (cell) => {
@@ -277,7 +321,16 @@ const boardStyle = computed(() => ({
 	gridTemplateColumns: `repeat(${cols}, 2.25rem)`,
 }))
 
-addBoard()
+
+const initializeGame = () => {
+	addEmptyBoard()
+	addEmptyBoard()
+	addLightBoard()
+	addBoard()
+	addBoard()
+}
+
+initializeGame()
 </script>
 
 <style scoped>
