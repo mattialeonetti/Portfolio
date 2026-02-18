@@ -1,12 +1,18 @@
 <template>
 	<main class="game-wrap">
-		<h1>Minesweeper</h1>
-
 		<section class="hud">
-			<p class="status">{{ statusText }}</p>
+			<div class="score-container shadow" style="background-color: black;">
+				<SevenSegmentDisplay :value="colCounter" height="80" color="red" bgColor="#4A0A0A" start-from-end="true" segment-size="4" />
+			</div>
+			<div class="face-bar inverted-shadow">
+				<button type="button" class="face-button" @click="onFaceClick">
+					<img class="face-image" :src="faceAnimation.src" :alt="faceAnimation.alt" draggable="false" />
+				</button>
+			</div>
+			<div style="width: 17rem;"></div>
 		</section>
 
-		<div ref="boardContainerRef" class="board-container">
+		<div ref="boardContainerRef" class="board-container shadow">
 			<div class="board-track" :style="boardTrackStyle">
 				<section v-for="boardId in boardIds" :key="boardId" class="board" :style="boardStyle">
 					<button v-for="cell in flatBoard(boards[boardId])" :key="cell.id" class="cell" type="button"
@@ -22,6 +28,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import SevenSegmentDisplay from "vue-ts-seven-segment-display"
 import blastEmptyImage from '../assets/cells/blastempty.svg'
 import blastImage from '../assets/cells/blast.svg'
 import cell1Image from '../assets/cells/cell1.svg'
@@ -37,6 +44,15 @@ import cellFlagImage from '../assets/cells/cellflag.svg'
 import cellMineImage from '../assets/cells/cellmine.svg'
 import cellUpImage from '../assets/cells/cellup.svg'
 import falseMineImage from '../assets/cells/falsemine.svg'
+import deadFaceImage from '../assets/faces/dead.svg'
+import glasses01FaceImage from '../assets/faces/galles01.svg'
+import glasses04FaceImage from '../assets/faces/galsses04.svg'
+import glasses02FaceImage from '../assets/faces/glasses02.svg'
+import glasses03FaceImage from '../assets/faces/glasses03.svg'
+import smileFaceImage from '../assets/faces/smile.svg'
+import winkFaceImage from '../assets/faces/wink.svg'
+import wow01FaceImage from '../assets/faces/wow01.svg'
+import wow02FaceImage from '../assets/faces/wow02.svg'
 
 const props = defineProps({
 	rows: {
@@ -61,16 +77,55 @@ const boards = ref({}) // collection of boards
 const boardIds = ref([]) // ordered list of board IDs for rendering and window management
 const nextBoardId = ref(0) // keeps track of next board ID to assign
 const gameOver = ref(false) // game over state
-const explodedCellId = ref(null) // ID of the cell that caused the game over, used for blast image
+const explodedCell = ref(null) // ID of the cell that caused the game over, used for blast image
 const boardContainerRef = ref(null) // ref to the board container for measuring and scrolling
 const worldOffsetPx = ref(0) // how far the world has scrolled in pixels
 const boardStridePx = ref(0) // how many pixels to scroll before shifting the board window
 const lastHiddenCol = ref(0) // the rightmost column index that was hidden on the left
+const colCounter = ref(0) // counts how many columns have been hidden, used for score display
 
 const autoScrollSpeed = 8
 const boardBufferCount = 1
 let scrollAnimationFrameId = null
 let lastFrameTime = null
+let faceIntervalId = null
+let faceTimeoutId = null
+
+const faceAnimations = {
+	idle: {
+		frames: [smileFaceImage],
+		frameDurationMs: 900,
+		loop: true,
+		returnToIdle: false,
+	},
+	glasses: {
+		frames: [glasses01FaceImage, glasses02FaceImage, glasses03FaceImage, glasses03FaceImage, glasses03FaceImage, glasses03FaceImage, glasses04FaceImage, glasses03FaceImage, glasses03FaceImage],
+		frameDurationMs: 120,
+		loop: false,
+		returnToIdle: true,
+	},
+	wow: {
+		frames: [wow01FaceImage, wow02FaceImage, wow02FaceImage, wow02FaceImage, wow02FaceImage, wow01FaceImage],
+		frameDurationMs: 250,
+		loop: false,
+		returnToIdle: true,
+	},
+	click: {
+		frames: [winkFaceImage],
+		frameDurationMs: 250,
+		loop: false,
+		returnToIdle: true,
+	},
+	dead: {
+		frames: [deadFaceImage],
+		frameDurationMs: 500,
+		loop: false,
+		returnToIdle: false,
+	},
+}
+
+const currentFaceSrc = ref(smileFaceImage)
+const currentFaceAlt = ref('idle face')
 
 const numberImages = {
 	1: cell1Image,
@@ -216,6 +271,9 @@ const floodReveal = (boardId, startRow, startCol) => {
 
 		if (!cell.revealed) {
 			cell.revealed = true
+			if (cell.neighborMines > 3 && currentFaceAlt.value === 'idle face') {
+				startAnimation('wow')
+			}
 		}
 
 		if (cell.neighborMines !== 0) {
@@ -226,6 +284,9 @@ const floodReveal = (boardId, startRow, startCol) => {
 			if (!neighbor.mine && !neighbor.flagged) {
 				stack.push([neighbor.boardId, neighbor.row, neighbor.col])
 			}
+		}
+		if (stack.length > 12 && currentFaceAlt.value === 'idle face') {
+			startAnimation('glasses')
 		}
 	}
 }
@@ -245,9 +306,10 @@ const floodRevealBorderCells = (boardId) => {
 
 const endGame = (cell) => {
 	cell.revealed = true
-	explodedCellId.value = cell.id
+	explodedCell.value = cell
 	revealAllMines()
 	gameOver.value = true
+	setDeadFace()
 	if (scrollAnimationFrameId !== null) {
 		cancelAnimationFrame(scrollAnimationFrameId)
 		scrollAnimationFrameId = null
@@ -402,10 +464,10 @@ const cellImage = (cell) => {
 	}
 
 	if (cell.mine) {
-		return cell.id === explodedCellId.value ? blastImage : cellMineImage
+		return cell === explodedCell.value ? blastImage : cellMineImage
 	}
 
-	if (cell.id === explodedCellId.value) {
+	if (cell === explodedCell.value) {
 		return blastEmptyImage
 	}
 
@@ -416,13 +478,6 @@ const cellImage = (cell) => {
 	return cellDownImage
 }
 const flatBoard = (board) => (board ? board.flat() : [])
-const statusText = computed(() => {
-	if (gameOver.value) {
-		return 'Game over'
-	}
-
-	return 'Left click to reveal, right click to flag'
-})
 
 const boardStyle = computed(() => ({
 	gridTemplateColumns: `repeat(${cols}, 2.25rem)`,
@@ -431,6 +486,89 @@ const boardStyle = computed(() => ({
 const boardTrackStyle = computed(() => ({
 	transform: `translateX(${-worldOffsetPx.value}px)`,
 }))
+
+const faceAnimation = computed(() => ({
+	src: currentFaceSrc.value,
+	alt: currentFaceAlt.value,
+}))
+
+const clearFaceTimers = () => {
+	if (faceIntervalId !== null) {
+		clearInterval(faceIntervalId)
+		faceIntervalId = null
+	}
+
+	if (faceTimeoutId !== null) {
+		clearTimeout(faceTimeoutId)
+		faceTimeoutId = null
+	}
+}
+
+const applyFaceFrame = (name, frameSrc) => {
+	currentFaceSrc.value = frameSrc
+	currentFaceAlt.value = `${name} face`
+}
+
+const startAnimation = (name = 'idle') => {
+	const animation = faceAnimations[name]
+	if (!animation) {
+		return
+	}
+
+	clearFaceTimers()
+
+	const frames = animation.frames
+	let frameIndex = 0
+	applyFaceFrame(name, frames[0])
+
+	const playStep = () => {
+		frameIndex = (frameIndex + 1) % frames.length
+		applyFaceFrame(name, frames[frameIndex])
+	}
+
+	if (animation.loop) {
+		faceIntervalId = setInterval(playStep, animation.frameDurationMs)
+		return
+	}
+
+	if (frames.length > 1) {
+		faceIntervalId = setInterval(playStep, animation.frameDurationMs)
+	}
+
+	const totalDurationMs = Math.max(1, frames.length) * animation.frameDurationMs
+	faceTimeoutId = setTimeout(() => {
+		clearFaceTimers()
+		if (animation.returnToIdle && !gameOver.value) {
+			startAnimation('idle')
+		}
+	}, totalDurationMs)
+}
+
+const stopFaceAnimation = () => {
+	clearFaceTimers()
+}
+
+const setDeadFace = () => {
+	startAnimation('dead')
+}
+
+const startFaceAnimation = () => {
+	if (gameOver.value) {
+		setDeadFace()
+		return
+	}
+
+	startAnimation('idle')
+}
+
+const onFaceClick = () => {
+	if (gameOver.value) {
+		setDeadFace()
+		return
+	}
+
+	startAnimation('click')
+}
 
 
 const initializeGame = () => {
@@ -466,6 +604,7 @@ const tickScroll = (time) => {
 
 	const activelyHidingCol = Math.floor(worldOffsetPx.value / (boardStridePx.value / cols))
 	if (activelyHidingCol !== lastHiddenCol.value) {
+		colCounter.value += 1
 		lastHiddenCol.value = activelyHidingCol
 		for (let row = 0; row < rows; row += 1) {
 			const cell = boards.value[boardIds.value[0]]?.[row]?.[activelyHidingCol]
@@ -488,6 +627,7 @@ const handleResize = async () => {
 onMounted(async () => {
 	updateBoardStride()
 	initializeGame()
+	startFaceAnimation()
 	await nextTick()
 	ensureBoardWindow()
 	window.addEventListener('resize', handleResize)
@@ -502,6 +642,7 @@ onUnmounted(() => {
 		cancelAnimationFrame(scrollAnimationFrameId)
 		scrollAnimationFrameId = null
 	}
+	stopFaceAnimation()
 	lastFrameTime = null
 })
 </script>
@@ -510,6 +651,7 @@ onUnmounted(() => {
 .game-wrap {
 	max-width: 100vw;
 	margin: 2rem auto;
+	background-color: #bdbdbd;
 	padding: 1rem;
 	font-family: Arial, sans-serif;
 }
@@ -518,20 +660,41 @@ h1 {
 	margin-bottom: 1rem;
 }
 
+.face-bar {
+	display: flex;
+	justify-content: flex-end;
+	margin-bottom: 0.5rem;
+	width: 10rem;
+	height: 10rem
+}
+
+.score-container {
+	display: flex;
+	padding: 1.5rem;
+}
+
+.face-button {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	line-height: 0;
+	cursor: pointer;
+}
+
+.face-image {
+	width: 8rem;
+	display: block;
+}
+
 .hud {
 	display: flex;
-	flex-wrap: wrap;
-	gap: 0.75rem 1rem;
+	flex-direction: row;
+	gap: 1rem;
 	align-items: center;
+	justify-content: center;
 	margin-bottom: 1rem;
-}
-
-.hud p {
-	margin: 0;
-}
-
-.status {
-	flex-basis: 100%;
+	height: 11rem;
+	padding-right: 2rem;
 }
 
 .hud button {
@@ -543,6 +706,21 @@ h1 {
 	overflow-x: hidden;
 	overflow-y: hidden;
 	position: relative;
+}
+
+.shadow {
+	border-left: 5px solid #7b7b7b;
+	border-top: 5px solid #7b7b7b;
+	border-bottom: 5px solid white;
+	border-right: 5px solid white;
+}
+
+.inverted-shadow {
+	border-left: 10px solid white;
+	border-top: 10px solid white;
+	border-bottom: 10px solid #7b7b7b;
+	border-right: 10px solid #7b7b7b;
+	box-shadow: -2px 0 0 0 #7b7b7b, 0 -2px 0 0 #7b7b7b;
 }
 
 .board-track {
