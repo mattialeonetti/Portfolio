@@ -3,24 +3,19 @@
 		<h1>Minesweeper</h1>
 
 		<section class="hud">
-			<p>Mines: {{ mineCount }}</p>
-			<p>Flags: {{ flagCount }}</p>
 			<p class="status">{{ statusText }}</p>
-			<button type="button" @click="resetGame">New Game</button>
+			<button type="button" @click="addBoard">New Game</button>
 		</section>
 
-		<section class="board" :style="boardStyle">
-			<button
-				v-for="cell in flatBoard"
-				:key="cell.id"
-				class="cell"
-				type="button"
-				@click="reveal(cell.row, cell.col)"
-				@contextmenu.prevent="toggleFlag(cell.row, cell.col)"
-			>
-				<img :src="cellImage(cell)" alt="cell" draggable="false" />
-			</button>
-		</section>
+		<div class="board-container">
+			<section v-for="(board, boardId) in boards" :key="boardId" class="board" :style="boardStyle">
+				<button v-for="cell in flatBoard(board)" :key="cell.id" class="cell" type="button"
+					@click="reveal(boardId, cell.row, cell.col)"
+					@contextmenu.prevent="toggleFlag(boardId, cell.row, cell.col)">
+					<img :src="cellImage(cell)" alt="cell" draggable="false" />
+				</button>
+			</section>
+		</div>
 	</main>
 </template>
 
@@ -42,25 +37,26 @@ import cellUpImage from '../assets/cells/cellup.svg'
 import falseMineImage from '../assets/cells/falsemine.svg'
 
 const props = defineProps({
-    rows: {
-        type: Number,
-        default: 9,
-    },
-    cols: {
-        type: Number,
-        default: 9,
-    },
-    mineCount: {
-        type: Number,
-        default: 10,
-    },
+	rows: {
+		type: Number,
+		default: 16,
+	},
+	cols: {
+		type: Number,
+		default: 16,
+	},
+	mineCount: {
+		type: Number,
+		default: 40,
+	},
 })
 
 const rows = props.rows
 const cols = props.cols
 const mineCount = props.mineCount
 
-const board = ref([])
+const boards = ref({})
+const nextBoardId = ref(0)
 const gameOver = ref(false)
 const won = ref(false)
 const firstMove = ref(true)
@@ -89,10 +85,18 @@ const createCell = (row, col) => ({
 	neighborMines: 0,
 })
 
-const createBoard = () =>
-	Array.from({ length: rows }, (_, row) => Array.from({ length: cols }, (_, col) => createCell(row, col)))
+const createBoard = () => {
+	const boardId = String(nextBoardId.value)
+	nextBoardId.value += 1
+	boards.value[boardId] = Array.from({ length: rows }, (_, row) =>
+		Array.from({ length: cols }, (_, col) => createCell(row, col)),
+	)
+	placeMines(boardId)
+	computeNeighborMines(boardId)
+	return boardId
+}
 
-const neighbors = (row, col) => {
+const neighbors = (boardId, row, col) => {
 	const result = []
 
 	for (let rowOffset = -1; rowOffset <= 1; rowOffset += 1) {
@@ -105,7 +109,7 @@ const neighbors = (row, col) => {
 			const nextCol = col + colOffset
 
 			if (nextRow >= 0 && nextRow < rows && nextCol >= 0 && nextCol < cols) {
-				result.push(board.value[nextRow][nextCol])
+				result.push(boards.value[boardId][nextRow][nextCol])
 			}
 		}
 	}
@@ -113,15 +117,15 @@ const neighbors = (row, col) => {
 	return result
 }
 
-const placeMines = (safeRow, safeCol) => {
+const placeMines = (boardId) => {
 	let placed = 0
 
 	while (placed < mineCount) {
 		const row = Math.floor(Math.random() * rows)
 		const col = Math.floor(Math.random() * cols)
-		const cell = board.value[row][col]
+		const cell = boards.value[boardId][row][col]
 
-		if (cell.mine || (row === safeRow && col === safeCol)) {
+		if (cell.mine) {
 			continue
 		}
 
@@ -130,23 +134,23 @@ const placeMines = (safeRow, safeCol) => {
 	}
 }
 
-const computeNeighborMines = () => {
+const computeNeighborMines = (boardId) => {
 	for (let row = 0; row < rows; row += 1) {
 		for (let col = 0; col < cols; col += 1) {
-			const cell = board.value[row][col]
+			const cell = boards.value[boardId][row][col]
 			if (cell.mine) {
 				continue
 			}
 
-			cell.neighborMines = neighbors(row, col).filter((neighbor) => neighbor.mine).length
+			cell.neighborMines = neighbors(boardId, row, col).filter((neighbor) => neighbor.mine).length
 		}
 	}
 }
 
-const revealAllMines = () => {
+const revealAllMines = (boardId) => {
 	for (let row = 0; row < rows; row += 1) {
 		for (let col = 0; col < cols; col += 1) {
-			const cell = board.value[row][col]
+			const cell = boards.value[boardId][row][col]
 			if (cell.mine) {
 				cell.revealed = true
 			}
@@ -154,12 +158,12 @@ const revealAllMines = () => {
 	}
 }
 
-const floodReveal = (startRow, startCol) => {
+const floodReveal = (boardId, startRow, startCol) => {
 	const stack = [[startRow, startCol]]
 
 	while (stack.length > 0) {
 		const [row, col] = stack.pop()
-		const cell = board.value[row][col]
+		const cell = boards.value[boardId][row][col]
 
 		if (cell.revealed || cell.flagged) {
 			continue
@@ -171,7 +175,7 @@ const floodReveal = (startRow, startCol) => {
 			continue
 		}
 
-		for (const neighbor of neighbors(row, col)) {
+		for (const neighbor of neighbors(boardId, row, col)) {
 			if (!neighbor.revealed && !neighbor.mine) {
 				stack.push([neighbor.row, neighbor.col])
 			}
@@ -179,10 +183,10 @@ const floodReveal = (startRow, startCol) => {
 	}
 }
 
-const hasWon = () => {
+const hasWon = (boardId) => {
 	for (let row = 0; row < rows; row += 1) {
 		for (let col = 0; col < cols; col += 1) {
-			const cell = board.value[row][col]
+			const cell = boards.value[boardId][row][col]
 			if (!cell.mine && !cell.revealed) {
 				return false
 			}
@@ -192,43 +196,37 @@ const hasWon = () => {
 	return true
 }
 
-const reveal = (row, col) => {
-	if (gameOver.value || won.value) {
+const reveal = (boardId, row, col) => {
+	if (gameOver.value) {
 		return
 	}
 
-	const cell = board.value[row][col]
+	const cell = boards.value[boardId][row][col]
 	if (cell.flagged || cell.revealed) {
 		return
-	}
-
-	if (firstMove.value) {
-		placeMines(row, col)
-		computeNeighborMines()
-		firstMove.value = false
 	}
 
 	if (cell.mine) {
 		cell.revealed = true
 		explodedCellId.value = cell.id
-		revealAllMines()
+		revealAllMines(boardId)
 		gameOver.value = true
 		return
 	}
 
-	floodReveal(row, col)
+	floodReveal(boardId, row, col)
 
-	if (hasWon()) {
+	if (hasWon(boardId)) {
 		won.value = true
 	}
 }
 
-const toggleFlag = (row, col) => {
+const toggleFlag = (boardId, row, col) => {
 	if (gameOver.value || won.value) {
 		return
 	}
 
-	const cell = board.value[row][col]
+	const cell = boards.value[boardId][row][col]
 	if (cell.revealed) {
 		return
 	}
@@ -236,11 +234,10 @@ const toggleFlag = (row, col) => {
 	cell.flagged = !cell.flagged
 }
 
-const resetGame = () => {
-	board.value = createBoard()
+const addBoard = () => {
+	createBoard()
 	gameOver.value = false
 	won.value = false
-	firstMove.value = true
 	explodedCellId.value = null
 }
 
@@ -263,9 +260,7 @@ const cellImage = (cell) => {
 
 	return cellDownImage
 }
-
-const flatBoard = computed(() => board.value.flat())
-const flagCount = computed(() => flatBoard.value.filter((cell) => cell.flagged).length)
+const flatBoard = (board) => board.flat()
 const statusText = computed(() => {
 	if (won.value) {
 		return 'You won!'
@@ -282,12 +277,12 @@ const boardStyle = computed(() => ({
 	gridTemplateColumns: `repeat(${cols}, 2.25rem)`,
 }))
 
-resetGame()
+addBoard()
 </script>
 
 <style scoped>
 .game-wrap {
-	max-width: 36rem;
+	max-width: 100vw;
 	margin: 2rem auto;
 	padding: 1rem;
 	font-family: Arial, sans-serif;
@@ -316,6 +311,14 @@ h1 {
 .hud button {
 	padding: 0.35rem 0.75rem;
 	cursor: pointer;
+}
+
+.board-container {
+	display: flex;
+	gap: 0.2rem;
+	overflow-x: hidden;
+	justify-content: flex-start;
+	align-items: flex-start;
 }
 
 .board {
