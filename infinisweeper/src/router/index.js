@@ -1,9 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Game from '../views/Game.vue'
+import Home from '@/views/Home.vue'
+import HomeIntro from '@/views/HomeIntro.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [{ path: '/', name: 'game', component: Game }],
+  routes: [
+    {
+      path: '/',
+      component: Home,
+      children: [
+        { path: '', name: 'home', component: HomeIntro },
+      ],
+    },
+    { path: '/infinisweeper', name: 'infinisweeper', component: Game },
+  ],
 })
 
 export default router
