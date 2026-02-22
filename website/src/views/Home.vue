@@ -2,13 +2,13 @@
     <div class="home-bg">
         <div class="page">
             <div class="header">
-                <h1 class="title">Mattia's application to study game design</h1>
+                <h1 class="title">Mattia's Application to Study Game Design</h1>
             </div>
             <div class="menu-container">
                 <nav class="menu">
-                    <RouterLink to="/" class="menu-link" active-class="active" exact-active-class="active">Home</RouterLink>
-                    <RouterLink to="/motivation" class="menu-link" active-class="active">Letter of Motivation</RouterLink>
-                    <RouterLink to="/infinisweeper" class="menu-link" active-class="active">Infinisweeper</RouterLink>
+                    <RouterLink to="/" class="menu-link" active-class="active" exact-active-class="active">home</RouterLink>
+                    <RouterLink to="/motivation" class="menu-link" active-class="active">letter of motivation</RouterLink>
+                    <RouterLink to="/portfolio" class="menu-link" active-class="active">portfolio</RouterLink>
                 </nav>
             </div>
             <section class="content-slot">
@@ -82,7 +82,7 @@
     flex-direction: column;
     margin-top: 2rem;
     height: 70%;
-    width: 50%;
+    width: 60%;
     text-align: left;
     margin-bottom: 2rem;;
 }
@@ -97,7 +97,7 @@
 
 .menu-link {
     --menu-bg: orangered;
-    --tab-height: 1.5rem;
+    --tab-height: 1.8rem;
     --tab-cut: var(--tab-height);
     position: relative;
     overflow: hidden;
