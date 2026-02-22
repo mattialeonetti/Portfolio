@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Game from '../views/Game.vue'
 import Home from '@/views/Home.vue'
 import HomeIntro from '@/views/HomeIntro.vue'
+import Motivation from '@/views/Motivation.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -11,6 +12,7 @@ const router = createRouter({
       component: Home,
       children: [
         { path: '', name: 'home', component: HomeIntro },
+        { path: 'motivation', name: 'motivation', component: Motivation }
       ],
     },
     { path: '/infinisweeper', name: 'infinisweeper', component: Game },

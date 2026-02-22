@@ -1,13 +1,13 @@
 <template>
     <div class="home-bg">
-        <div class="page cut">
+        <div class="page">
             <div class="header">
                 <h1 class="title">Mattia's application to study game design</h1>
             </div>
             <div class="menu-container">
                 <nav class="menu">
-                    <RouterLink to="/" class="menu-link" active-class="active" exact-active-class="active">Home
-                    </RouterLink>
+                    <RouterLink to="/" class="menu-link" active-class="active" exact-active-class="active">Home</RouterLink>
+                    <RouterLink to="/motivation" class="menu-link" active-class="active">Letter of Motivation</RouterLink>
                     <RouterLink to="/infinisweeper" class="menu-link" active-class="active">Infinisweeper</RouterLink>
                 </nav>
             </div>
@@ -44,15 +44,35 @@
 }
 
 .home-bg::before {
-    top: 40%;
+    top: 20rem;
     left: 30%;
     transform: scale(-1, -1);
     transform-origin: top left;
+    animation: drift-left 320s linear infinite;
 }
 
 .home-bg::after {
     right: -20%;
-    bottom: -10%;
+    top: 30rem;
+    animation: drift-right 320s linear infinite;
+}
+
+@keyframes drift-left {
+    from {
+        transform: scale(-1, -1) translateX(0);
+    }
+    to {
+        transform: scale(-1, -1) translateX(-130vw);
+    }
+}
+
+@keyframes drift-right {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-100vw);
+    }
 }
 
 .page {
@@ -64,7 +84,7 @@
     height: 70%;
     width: 50%;
     text-align: left;
-    background-color: white;
+    margin-bottom: 2rem;;
 }
 
 .menu {
@@ -77,7 +97,7 @@
 
 .menu-link {
     --menu-bg: orangered;
-    --tab-height: 2rem;
+    --tab-height: 1.5rem;
     --tab-cut: var(--tab-height);
     position: relative;
     overflow: hidden;
@@ -93,6 +113,7 @@
     font-weight: 600;
     background-color: var(--menu-bg);
     border-bottom: 3px solid rgb(23, 23, 23);
+    border-top: 3px solid transparent;
     clip-path: polygon(var(--tab-cut) 0, 100% 0, calc(100% - var(--tab-cut)) 100%, 0 100%);
 }
 
@@ -100,10 +121,12 @@
     --menu-bg: white;
     border: none;
     border-bottom: 3px solid white;
+    border-top: 3px solid rgb(23, 23, 23);
 }
 
 .content-slot {
     padding: 1rem 1.25rem 1.25rem;
+    background-color: white;
 }
 
 .cut {
@@ -113,13 +136,31 @@
 }
 
 .header {
-    height: 5rem;
+    --height: 5rem;
+    height: var(--height);
+    display: flex;
+    align-items: end;
+    justify-content: flex-end;
+    background-color: transparent;
+    position: relative;
+    text-align: right;
+    padding-left: var(--height);
+    width: 100% - 5rem;
+    clip-path: polygon(var(--height) 0, 100% 0, 100% var(--height), 0 var(--height));
+}
+
+.header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background-image: url('../assets/bg/orange.png');
     background-size: cover;
     background-position: center 0%;
     animation: header-pan-down 60s linear infinite alternate;
-    text-align: right;
-    width: 100%;
+    z-index: -1;
 }
 
 @keyframes header-pan-down {
@@ -132,17 +173,8 @@
     }
 }
 
-.cut:before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    border-width: 5rem 5rem 0px 0px;
-    border-style: solid;
-    border-color: rgb(23, 23, 23) transparent transparent rgb(23, 23, 23);
-}
-
 .title {
     margin-right: 1rem;
+    font-size: x-large;
 }
 </style>
