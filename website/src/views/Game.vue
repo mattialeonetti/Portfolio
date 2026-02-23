@@ -1,27 +1,32 @@
 <template>
-	<main class="game-wrap">
-		<section class="hud">
-			<div class="score-container shadow" style="background-color: black;">
-				<SevenSegmentDisplay :value="colCounter" height="80" color="red" bgColor="#4A0A0A" start-from-end="true" segment-size="4" />
-			</div>
-			<div class="face-bar inverted-shadow">
-				<button type="button" class="face-button" @click="onFaceClick">
-					<img class="face-image" :src="faceAnimation.src" :alt="faceAnimation.alt" draggable="false" />
-				</button>
-			</div>
-			<div style="width: 17rem;"></div>
-		</section>
-
-		<div ref="boardContainerRef" class="board-container shadow">
-			<div class="board-track" :style="boardTrackStyle">
-				<section v-for="boardId in boardIds" :key="boardId" class="board" :style="boardStyle">
-					<button v-for="cell in flatBoard(boards[boardId])" :key="cell.id" class="cell" type="button"
-						@click="reveal(boardId, cell.row, cell.col)"
-						@contextmenu.prevent="toggleFlag(boardId, cell.row, cell.col)">
-						<img :src="cellImage(cell)" alt="cell" draggable="false" />
+	<main class="game-wrap" :style="gameWrapStyle">
+		<div class="header">
+			<RouterLink class="return inverted-shadow" to="/portfolio">
+				<img class="return-icon" src="../assets/left.svg" alt="return to portfolio" />
+			</RouterLink>
+			<section ref="hudRef" class="hud">
+				<div class="score-container shadow" style="background-color: black;">
+					<SevenSegmentDisplay :value="colCounter" height="80" color="red" bgColor="#4A0A0A"
+						start-from-end="true" segment-size="4" />
+				</div>
+				<div class="face-bar inverted-shadow">
+					<button type="button" class="face-button" @click="onFaceClick">
+						<img class="face-image" :src="faceAnimation.src" :alt="faceAnimation.alt" draggable="false" />
 					</button>
-				</section>
-			</div>
+				</div>
+				<div style="width: 17rem;"></div>
+			</section>
+		</div>
+		<div ref="boardContainerRef" class="board-container shadow">
+		<div class="board-track" :style="boardTrackStyle">
+			<section v-for="boardId in boardIds" :key="boardId" class="board" :style="boardStyle">
+				<button v-for="cell in flatBoard(boards[boardId])" :key="cell.id" class="cell" type="button"
+					@click="reveal(boardId, cell.row, cell.col)"
+					@contextmenu.prevent="toggleFlag(boardId, cell.row, cell.col)">
+					<img :src="cellImage(cell)" alt="cell" draggable="false" />
+				</button>
+			</section>
+		</div>
 		</div>
 	</main>
 </template>
@@ -79,13 +84,18 @@ const nextBoardId = ref(0) // keeps track of next board ID to assign
 const gameOver = ref(false) // game over state
 const explodedCell = ref(null) // ID of the cell that caused the game over, used for blast image
 const boardContainerRef = ref(null) // ref to the board container for measuring and scrolling
+const hudRef = ref(null) // ref to hud for viewport-based board sizing
 const worldOffsetPx = ref(0) // how far the world has scrolled in pixels
 const boardStridePx = ref(0) // how many pixels to scroll before shifting the board window
+const cellSizePx = ref(36) // responsive cell size to keep all rows visible
 const lastHiddenCol = ref(0) // the rightmost column index that was hidden on the left
 const colCounter = ref(0) // counts how many columns have been hidden, used for score display
 
 const autoScrollSpeed = 6
 const boardBufferCount = 1
+const cellGapRem = 0.2
+const boardGapRem = 0.2
+const defaultCellSizePx = 36
 let scrollAnimationFrameId = null
 let lastFrameTime = null
 let faceIntervalId = null
@@ -405,11 +415,52 @@ const shiftBoardWindowRight = () => {
 
 const getFallbackBoardStride = () => {
 	const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
-	const cellSizeRem = 2.25
-	const cellGapRem = 0.2
-	const boardGapRem = 0.2
-	const boardWidthRem = cols * cellSizeRem + (cols - 1) * cellGapRem
-	return (boardWidthRem + boardGapRem) * rootFontSize
+	const cellGapPx = cellGapRem * rootFontSize
+	const boardGapPx = boardGapRem * rootFontSize
+	return cols * cellSizePx.value + (cols - 1) * cellGapPx + boardGapPx
+}
+
+const updateCellSize = () => {
+	const container = boardContainerRef.value
+	const hud = hudRef.value
+	if (!container || !hud) {
+		return
+	}
+
+	const gameWrap = container.parentElement
+	if (!gameWrap) {
+		return
+	}
+
+	const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+	const cellGapPx = cellGapRem * rootFontSize
+	const gameWrapStyles = getComputedStyle(gameWrap)
+	const gameWrapPaddingTop = Number.parseFloat(gameWrapStyles.paddingTop || '0') || 0
+	const gameWrapPaddingBottom = Number.parseFloat(gameWrapStyles.paddingBottom || '0') || 0
+
+	const hudStyles = getComputedStyle(hud)
+	const hudMarginBottom = Number.parseFloat(hudStyles.marginBottom || '0') || 0
+	const hudHeight = hud.getBoundingClientRect().height
+
+	const containerStyles = getComputedStyle(container)
+	const containerBorderTop = Number.parseFloat(containerStyles.borderTopWidth || '0') || 0
+	const containerBorderBottom = Number.parseFloat(containerStyles.borderBottomWidth || '0') || 0
+
+	const availableHeightPx =
+		window.innerHeight
+		- gameWrapPaddingTop
+		- gameWrapPaddingBottom
+		- hudHeight
+		- hudMarginBottom
+		- containerBorderTop
+		- containerBorderBottom
+
+	if (availableHeightPx <= 0) {
+		return
+	}
+
+	const fittedSizePx = (availableHeightPx - (rows - 1) * cellGapPx) / rows
+	cellSizePx.value = Math.max(1, Math.min(defaultCellSizePx, Math.floor(fittedSizePx)))
 }
 
 const updateBoardStride = () => {
@@ -480,7 +531,11 @@ const cellImage = (cell) => {
 const flatBoard = (board) => (board ? board.flat() : [])
 
 const boardStyle = computed(() => ({
-	gridTemplateColumns: `repeat(${cols}, 2.25rem)`,
+	gridTemplateColumns: `repeat(${cols}, ${cellSizePx.value}px)`,
+}))
+
+const gameWrapStyle = computed(() => ({
+	'--cell-size': `${cellSizePx.value}px`,
 }))
 
 const boardTrackStyle = computed(() => ({
@@ -563,11 +618,11 @@ const startFaceAnimation = () => {
 
 const onFaceClick = () => {
 	if (gameOver.value) {
-		setDeadFace()
-		return
+		location.reload()
 	}
-
-	startAnimation('click')
+	else {
+		startAnimation('click')
+	}
 }
 
 
@@ -618,26 +673,21 @@ const tickScroll = (time) => {
 	scrollAnimationFrameId = requestAnimationFrame(tickScroll)
 }
 
-const handleResize = async () => {
-	await nextTick()
-	updateBoardStride()
-	ensureBoardWindow()
-}
-
 onMounted(async () => {
+	await nextTick()
+	updateCellSize()
 	updateBoardStride()
 	initializeGame()
 	startFaceAnimation()
 	await nextTick()
+	updateBoardStride()
 	ensureBoardWindow()
-	window.addEventListener('resize', handleResize)
 	setTimeout(() => {
 		scrollAnimationFrameId = requestAnimationFrame(tickScroll)
 	}, 5000)
 })
 
 onUnmounted(() => {
-	window.removeEventListener('resize', handleResize)
 	if (scrollAnimationFrameId !== null) {
 		cancelAnimationFrame(scrollAnimationFrameId)
 		scrollAnimationFrameId = null
@@ -650,10 +700,16 @@ onUnmounted(() => {
 <style scoped>
 .game-wrap {
 	max-width: 100vw;
-	margin: 2rem auto;
+	height: 100dvh;
+	max-height: 100dvh;
+	margin: 0 auto;
 	background-color: #bdbdbd;
 	padding: 1rem;
 	font-family: Arial, sans-serif;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
 }
 
 h1 {
@@ -695,6 +751,7 @@ h1 {
 	margin-bottom: 1rem;
 	height: 11rem;
 	padding-right: 2rem;
+	width: 100%
 }
 
 .hud button {
@@ -706,6 +763,10 @@ h1 {
 	overflow-x: hidden;
 	overflow-y: hidden;
 	position: relative;
+	flex: 0 0 auto;
+	width: fit-content;
+	max-width: 100%;
+	margin: 0 auto;
 }
 
 .shadow {
@@ -736,8 +797,8 @@ h1 {
 }
 
 .cell {
-	width: 2.25rem;
-	height: 2.25rem;
+	width: var(--cell-size, 2.25rem);
+	height: var(--cell-size, 2.25rem);
 	padding: 0;
 	border: 0;
 	background: transparent;
@@ -749,5 +810,23 @@ h1 {
 	width: 100%;
 	height: 100%;
 	display: block;
+}
+
+.header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.return {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.5rem;
+}
+
+.return-icon {
+	width: 3.5rem;
+	height: 3.5rem;
 }
 </style>
