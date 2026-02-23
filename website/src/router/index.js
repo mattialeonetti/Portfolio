@@ -5,6 +5,7 @@ import HomeIntro from '@/views/HomeIntro.vue'
 import Motivation from '@/views/Motivation.vue'
 import Portfolio from '@/views/Portfolio.vue'
 import Project from '@/views/Project.vue'
+import AI from '@/views/AI.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,6 +18,7 @@ const router = createRouter({
         { path: 'motivation', name: 'motivation', component: Motivation },
         { path: 'portfolio', name: 'portfolio', component: Portfolio },
         { path: 'project', name: 'project', component: Project },
+        { path: 'ai', name: 'ai', component: AI },
       ],
     },
     { path: '/infinisweeper', name: 'infinisweeper', component: Game },

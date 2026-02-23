@@ -84,7 +84,7 @@ const boardStridePx = ref(0) // how many pixels to scroll before shifting the bo
 const lastHiddenCol = ref(0) // the rightmost column index that was hidden on the left
 const colCounter = ref(0) // counts how many columns have been hidden, used for score display
 
-const autoScrollSpeed = 8
+const autoScrollSpeed = 6
 const boardBufferCount = 1
 let scrollAnimationFrameId = null
 let lastFrameTime = null

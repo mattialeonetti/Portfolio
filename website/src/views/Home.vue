@@ -6,8 +6,10 @@
             </div>
             <div class="menu-container">
                 <nav class="menu">
-                    <RouterLink to="/" class="menu-link" active-class="active" exact-active-class="active">home</RouterLink>
-                    <RouterLink to="/motivation" class="menu-link" active-class="active">letter of motivation</RouterLink>
+                    <RouterLink to="/" class="menu-link" active-class="active" exact-active-class="active">home
+                    </RouterLink>
+                    <RouterLink to="/motivation" class="menu-link" active-class="active">letter of motivation
+                    </RouterLink>
                     <RouterLink to="/project" class="menu-link" active-class="active">project idea</RouterLink>
                     <RouterLink to="/portfolio" class="menu-link" active-class="active">portfolio</RouterLink>
                 </nav>
@@ -15,6 +17,12 @@
             <section class="content-slot">
                 <RouterView />
             </section>
+            <div class="footer-container">
+                <div class="footer">
+                    <a class="footer-content" href="https://github.com/mattialeonetti/Portfolio">GitHub</a>
+                    <RouterLink to="/ai" class="footer-content">AI usage</RouterLink>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -62,6 +70,7 @@
     from {
         transform: scale(-1, -1) translateX(0);
     }
+
     to {
         transform: scale(-1, -1) translateX(-130vw);
     }
@@ -71,6 +80,7 @@
     from {
         transform: translateX(0);
     }
+
     to {
         transform: translateX(-100vw);
     }
@@ -85,7 +95,8 @@
     height: 70%;
     width: 60%;
     text-align: left;
-    margin-bottom: 2rem;;
+    margin-bottom: 2rem;
+    ;
 }
 
 .menu {
@@ -94,6 +105,7 @@
     background-color: orangered;
     border-top: 0.5rem solid rgb(23, 23, 23);
     gap: -1rem;
+    box-shadow: inset 0 -3px 0 rgb(23, 23, 23);
 }
 
 .menu-link {
@@ -177,5 +189,26 @@
 .title {
     margin-right: 1rem;
     font-size: x-large;
+}
+
+.footer {
+    background-color: orangered;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0 0.2rem 0 1.2rem;
+    clip-path: polygon(1rem 0, 100% 0, 100% 1rem, 0 1rem);
+}
+
+.footer-container {
+    height: 1rem;
+    background-color: grey;
+    display: flex;
+    justify-content: flex-end;;
+}
+
+.footer-content {
+    color: white;
+    font-size: x-small;
 }
 </style>
