@@ -8,6 +8,7 @@
                 <nav class="menu">
                     <RouterLink to="/" class="menu-link" active-class="active" exact-active-class="active">home</RouterLink>
                     <RouterLink to="/motivation" class="menu-link" active-class="active">letter of motivation</RouterLink>
+                    <RouterLink to="/project" class="menu-link" active-class="active">project idea</RouterLink>
                     <RouterLink to="/portfolio" class="menu-link" active-class="active">portfolio</RouterLink>
                 </nav>
             </div>
@@ -44,7 +45,7 @@
 }
 
 .home-bg::before {
-    top: 20rem;
+    top: 25rem;
     left: 30%;
     transform: scale(-1, -1);
     transform-origin: top left;

@@ -4,6 +4,7 @@ import Home from '@/views/Home.vue'
 import HomeIntro from '@/views/HomeIntro.vue'
 import Motivation from '@/views/Motivation.vue'
 import Portfolio from '@/views/Portfolio.vue'
+import Project from '@/views/Project.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -14,7 +15,8 @@ const router = createRouter({
       children: [
         { path: '', name: 'home', component: HomeIntro },
         { path: 'motivation', name: 'motivation', component: Motivation },
-        { path: 'portfolio', name: 'portfolio', component: Portfolio }
+        { path: 'portfolio', name: 'portfolio', component: Portfolio },
+        { path: 'project', name: 'project', component: Project },
       ],
     },
     { path: '/infinisweeper', name: 'infinisweeper', component: Game },
