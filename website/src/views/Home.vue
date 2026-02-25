@@ -28,7 +28,7 @@
             <h3>We care about cookies!</h3>
             <p>Do you also care about cookies?</p>
             <div class="cookie-consent-options">
-                <button @click="denyCookies = false" class="deny">Deny</button>
+                <button @click="denyCookies" class="deny">Deny</button>
                 <button @click="acceptCookies" class="approve">Yes, please!</button>
             </div>
         </div>
@@ -52,7 +52,7 @@ onMounted(() => {
 
 const denyCookies = () => {
     try {
-        localStorage.setItem('cookiesAccepted', 'false');
+        localStorage.setItem('cookiesAccepted', 'true');
     } catch (e) {
     }
     cookiesVisible.value = false;
