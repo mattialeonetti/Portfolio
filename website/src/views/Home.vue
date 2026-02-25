@@ -24,9 +24,48 @@
                 </div>
             </div>
         </div>
+        <div v-if="cookiesVisible" class="cookie-consent">
+            <h3>We care about cookies!</h3>
+            <p>Do you also care about cookies?</p>
+            <div class="cookie-consent-options">
+                <button @click="denyCookies = false" class="deny">Deny</button>
+                <button @click="acceptCookies" class="approve">Yes, please!</button>
+            </div>
+        </div>
     </div>
 </template>
-<script>
+<script setup>
+import { ref, onMounted } from 'vue';
+
+const cookiesVisible = ref(false);
+
+onMounted(() => {
+    try {
+        let visited = localStorage.getItem('visited');
+        if (!visited) {
+            cookiesVisible.value = true;
+        }
+    } catch (e) {
+        cookiesVisible.value = true;
+    }
+});
+
+const denyCookies = () => {
+    try {
+        localStorage.setItem('cookiesAccepted', 'false');
+    } catch (e) {
+    }
+    cookiesVisible.value = false;
+};
+
+const acceptCookies = () => {
+    try {
+        localStorage.setItem('cookiesAccepted', 'true');
+        window.open('https://www.migros.ch/de/search?query=cookie', '_blank');
+    } catch (e) {
+    }
+    cookiesVisible.value = false;
+};
 </script>
 <style lang="css" scoped>
 .home-bg {
@@ -204,11 +243,47 @@
     height: 1rem;
     background-color: grey;
     display: flex;
-    justify-content: flex-end;;
+    justify-content: flex-end;
+    ;
 }
 
 .footer-content {
     color: white;
     font-size: x-small;
+}
+
+.cookie-consent {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: white;
+    padding: 1rem 1.5rem;
+    border: 2px solid grey;
+    z-index: 1000;
+    text-align: center;
+}
+
+.cookie-consent-options {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.approve {
+    background-color: orangered;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+
+.deny {
+    background-color: transparent;
+    color: grey;
+    border: 2px solid grey;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
 }
 </style>
