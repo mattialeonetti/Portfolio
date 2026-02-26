@@ -41,8 +41,8 @@ const cookiesVisible = ref(false);
 
 onMounted(() => {
     try {
-        let visited = localStorage.getItem('visited');
-        if (!visited) {
+        let accepted = localStorage.getItem('cookiesAccepted');
+        if (!accepted) {
             cookiesVisible.value = true;
         }
     } catch (e) {
@@ -235,7 +235,7 @@ const acceptCookies = () => {
     display: flex;
     gap: 0.5rem;
     align-items: center;
-    padding: 0 0.2rem 0 1.2rem;
+    padding: 0 0.5rem 0 1.2rem;
     clip-path: polygon(1rem 0, 100% 0, 100% 1rem, 0 1rem);
 }
 

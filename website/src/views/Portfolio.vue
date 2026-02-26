@@ -62,6 +62,8 @@
                     available, since it would require a backend to run the simulation and I have decided that it is not
                     worth the hassle.
                 </p>
+                <img src="../assets/portfolio_images/zoox.png" />
+                <p class="img-description">A screenshot of one of the applications I created for my bachelor's thesis.</p>
             </div>
             <div v-else-if="activeIndex === 3">
                 <h2>This Website</h2>
@@ -112,7 +114,7 @@
                 <p>
                     Since the application is only accessible to Helbling employees, I cannot share a link to allow you
                     to play around with it. Feedback by project leads has been overwhelmingly positive. There was also a
-                    list of improvements, whishes and a few bugs, which I am currently implementing/fixing.
+                    list of improvements, wishes and a few bugs, which I am currently implementing/fixing.
                 </p>
             </div>
             <div v-else-if="activeIndex === 5">
@@ -148,13 +150,13 @@
                     that.
                 </p>
                 <img src="../assets/portfolio_images/ST_game.png" />
-                <p class="img-description">Gameplay screen for a SUPERTRUMPF with two players. The screenshot shows the
+                <p class="img-description">Gameplay screen for a SUPERTRUMPF game with two players. The screenshot shows the
                     stage where the player's card is visible, but the opponent's isn't yet.</p>
                 <p>
                     I made mockups of all views in Adobe XD for our first presentation - the elevator pitch. For app
                     development I polished and exported some assets from Adobe XD and Adobe Illustrator, while
                     recreating interactive elements with HTML/CSS directly. Looking back on the project now four years
-                    later, I am still proud of the the game's style, especially since it was my first large software
+                    later, I am still proud of the game's style, especially since it was my first large software
                     project.
                 </p>
                 <img src="../assets/portfolio_images/ST_lobby.png" />
@@ -196,23 +198,13 @@
                 <p>
                     In my first internship at Helbling Technik Wil AG, I was tasked with developing a software
                     simulation of a diagnostic robot, both for testing and to facilitate development of the frontend.
-                    The application is accesible via a GUI and simulates all lower level behaviour of the robot, e.g.
+                    The application is accessible via a GUI and simulates all lower-level behaviour of the robot, e.g.
                     robotic positioning which is displayed in a schematic view in the GUI.
                 </p>
                 <p>
                     I am not at liberty to show any images of the application, but I can say that it was a very
                     formative project, during which I was able to learn to code well. I also think that simulating a
                     robot has parallels in game design, especially in programming movement systems and physics.
-                </p>
-            </div>
-            <div v-else-if="activeIndex === 8">
-                <h2>Social Media / Design Assistant</h2>
-                <p class="date">Since 2021</p>
-                <p class="language">Adobe Illustrator, Davinci Resolve - Graphic Design, Video Editing</p>
-                <p>
-                    I work part-time at Tonhalle Wil and Theaterwrkstatt Gleis 5 in Frauenfeld, where
-                    I have various roles. I help prepare social media posts, film and edit trailers for theater
-                    productions and design promotional materials.
                 </p>
             </div>
         </div>

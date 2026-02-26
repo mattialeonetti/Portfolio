@@ -5,7 +5,7 @@
             application
             website.
         </p>
-        <img src="../assets/Mattia.jpeg" alt="A picture of me" width="200px" />
+        <img src="../assets/Mattia.jpg" alt="A picture of me" width="200px" />
     </div>
 </template>
 <style lang="css" scoped>
