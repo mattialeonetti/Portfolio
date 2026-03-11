@@ -12,8 +12,6 @@
                 <div class="menu-item" :class="{ active: activeIndex === 6 }" @click="toggleItem(6)">test bench</div>
                 <div class="menu-item" :class="{ active: activeIndex === 7 }" @click="toggleItem(7)">diagnostic robot
                     simulation</div>
-                <div class="menu-item" :class="{ active: activeIndex === 8 }" @click="toggleItem(8)">various design
-                    projects</div>
             </nav>
         </div>
         <div class="content">
